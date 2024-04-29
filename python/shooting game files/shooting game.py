@@ -22,11 +22,15 @@ GREEN_LASER = pygame.image.load(os.path.join("pixel_laser_green.png"))
 YELLOW_LASER = pygame.image.load(os.path.join("pixel_laser_yellow.png"))
 
 # LOAD BACKGROUND
-BG = pygame.transform.scale(pygame.image.load(os.path.join("spacefield_a-000-preview.png")), (WIDTH, HEIGHT))
+BG = pygame.transform.scale(pygame.image.load(os.path.join("background-black.png")), (WIDTH, HEIGHT))
+BG1 = pygame.transform.scale(pygame.image.load(os.path.join("spaceship_preview_0.png")), (WIDTH, HEIGHT))
+#BG = pygame.transform.scale(pygame.image.load(os.path.join("spacefield_a-000-preview.png")), (WIDTH, HEIGHT))
 
 # LOAD SOUND EFFECTS
 explosion_sound = pygame.mixer.Sound(os.path.join("music_explosion.wav"))
 laser_sound = pygame.mixer.Sound(os.path.join("music_laser.wav"))
+space_sound = pygame.mixer.Sound(os.path.join("spacesound-7547.wav"))
+
 
 # Laser Class for shooting lasers
 class Laser:
@@ -99,12 +103,13 @@ class Ship:
 
 # Player Ship class which inherits from Ship class
 class Player(Ship):
-    def __init__(self, x, y, health= 100):
+    def __init__(self, x, y, health= 500):
         super().__init__(x, y, health)
         self.ship_img = YELLOW_SPACESHIP
         self.laser_img = YELLOW_LASER
         self.mask = pygame.mask.from_surface(self.ship_img)
         self.max_health = health
+        pygame.mixer.Channel(0).play(space_sound)
 
     def move_lasers(self, vel, objs):
         self.cooldown()
@@ -182,12 +187,18 @@ def main():
     main_font = pygame.font.SysFont("comicsans", size= 50)
     player = Player(300, 630)
 
-    clock = pygame.time.Clock()
+    pygame.mixer.music.load("spacesound-7547.wav")
+    pygame.mixer.music.set_volume(1)
+    pygame.mixer.music.play(loops=-1)
 
-    def redraw_window():
+    clock = pygame.time.Clock()
+    scroll = 0
+
+    def redraw_window(scroll):
 
         # DRAWING THE BACKGROUND
-        WIN.blit(BG, (0,0))
+        WIN.blit(BG, (0,scroll))
+        WIN.blit(BG, (0,scroll - HEIGHT))
 
         # DRAW TEXT
         level_label = main_font.render(f"Level: {level}", 1, (255,255,255))
@@ -211,7 +222,10 @@ def main():
 
     while run:
         clock.tick(FPS)
-        redraw_window() # UPDATING DISPLAY
+        scroll+= 0.5
+        if scroll >= HEIGHT:
+            scroll = 0
+        redraw_window(scroll) # UPDATING DISPLAY
 
         if lives <= 0 or player.health <= 0:
             lost = True
@@ -253,10 +267,10 @@ def main():
         for enemy in enemies[:]:
             enemy.move(ENEMY_VEL)
             enemy.move_lasers(LASER_VELO, player)
-            if random.randrange(0, 2*FPS) == 1: # Or shoot every 2 second with randomness
+            if random.randrange(0, 4*FPS) == 1: # Or shoot every 2 second with randomness
                 enemy.shoot()
             if collide(enemy, player):
-                player.health -= 10
+                player.health -= 5
                 pygame.mixer.Channel(2).play(explosion_sound)
                 enemies.remove(enemy)
             elif enemy.y + enemy.get_height() > HEIGHT:
